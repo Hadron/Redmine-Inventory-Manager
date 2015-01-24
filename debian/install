@@ -1,0 +1,5 @@
+*rb /usr/share/redmine/plugins/redmine_inventory_manager
+app /usr/share/redmine/plugins/redmine_inventory_manager
+db /usr/share/redmine/plugins/redmine_inventory_manager
+config /usr/share/redmine/plugins/redmine_inventory_manager
+assets/* /usr/share/redmine/public/plugin_assets/redmine_inventory_manager

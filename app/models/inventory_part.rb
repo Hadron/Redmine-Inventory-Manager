@@ -9,6 +9,7 @@ class InventoryPart < ActiveRecord::Base
   has_many :inventory_movements
   belongs_to :inventory_category
   
+  attr_accessible :part_number, :manufacturer, :inventory_category_id, :description, :where, :value, :status
   validates_presence_of :part_number, :inventory_category, :value, :status
   validates_uniqueness_of :part_number
 end

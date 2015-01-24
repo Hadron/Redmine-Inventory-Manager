@@ -14,6 +14,7 @@ class InventoryProvidor < ActiveRecord::Base
   #t.column :contact0, :string
   #t.column :contact1, :string
   
+  attr_accessible :identification, :name, :address0, :address1, :city, :state, :country, :phone0, :phone1, :fax, :business, :email, :contact0, :contact1
   validates_presence_of :identification, :name
 
   

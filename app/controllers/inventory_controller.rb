@@ -1,10 +1,10 @@
 require 'csv'
 class InventoryController < ApplicationController
 
-	unloadable
+  unloadable
 
   def reports
-    @warehouses = InventoryWarehouse.find(:all, :order => 'name').map {|w| [w.name, w.id]}
+    @warehouses = InventoryWarehouse.all.order('name').map {|w| [w.name, w.id]}
     @warehouses += [l('all_warehouses')]
     
     unless params[:warehouse]
@@ -29,10 +29,7 @@ class InventoryController < ApplicationController
     end
     
     if params[:id] == "input_invoice"
-      @movements = InventoryMovement.find(:all, 
-      	:conditions => "document is not null and document != '' and document_type <= 3"+add, 
-      	:order => 'document')
-      
+      @movements = InventoryMovement.where("document is not null and document != '' and document_type <= 3"+add).order('document')
       headers = [l(:From),l(:field_document),l(:field_document_type),l(:field_category),l(:field_short_part_number),
         l(:field_serial_number), l(:field_squantity), l(:field_value),l(:total),l(:Date)]
       fields = []
@@ -59,7 +56,7 @@ class InventoryController < ApplicationController
   
 
   def index
-    @warehouses = InventoryWarehouse.find(:all, :order => 'name').map {|w| [w.name, w.id]}
+    @warehouses = InventoryWarehouse.all.order('name').map {|w| [w.name, w.id]}
     @warehouses += [l('all_warehouses')]
     
     add = ""
@@ -241,11 +238,11 @@ class InventoryController < ApplicationController
   
 
   def movements
-    @parts = InventoryPart.find(:all, :order => 'part_number').map {|p| [p.part_number,p.id]}
-    @providors = InventoryProvidor.find(:all, :order => 'name').map {|p| [p.name,p.id]}
-    @inv_projects = Project.find(:all, :order => 'name').map {|p| [p.name,p.id]}
-    @users = User.find(:all, :conditions => 'status=1' , :order => 'lastname ASC, firstname ASC').map {|u| [u.lastname+" "+u.firstname, u.id]}
-    @warehouses = InventoryWarehouse.find(:all, :order => 'name').map {|w| [w.name, w.id]}
+    @parts = InventoryPart.all.order('part_number').map {|p| [p.part_number,p.id]}
+    @providors = InventoryProvidor.all.order('name').map {|p| [p.name,p.id]}
+    @inv_projects = Project.all.order('name').map {|p| [p.name,p.id]}
+    @users = User.where('status=1').order('lastname ASC, firstname ASC').map {|u| [u.lastname+" "+u.firstname, u.id]}
+    @warehouses = InventoryWarehouse.all.order('name').map {|w| [w.name, w.id]}
     @from_options = {l('User') => 'user_from_id', l('Warehouse') => 'warehouse_from_id', l('Providor') => 'inventory_providor_id'}
     @to_options = {l('User') => 'user_to_id', l('Project') => 'project_id'}
     @doc_types = { l('invoice') => 1, l('ticket') => 2, l('proforma-invoice') => 3, l("waybill") => 4, l("inventory") => 5}
@@ -378,14 +375,15 @@ class InventoryController < ApplicationController
       end
     end
 
-    @movements_in = InventoryMovement.find(:all, :conditions => "project_id is null and user_to_id is null", :order => "date DESC")
-    @movements_out = InventoryMovement.find(:all, :conditions => "inventory_providor_id is null and user_from_id is null and (project_id is not null or user_to_id is not null)", :order => "date DESC")
+    @movements_in = InventoryMovement.where("project_id is null and user_to_id is null").order("date DESC")
+    @movements_out = InventoryMovement.where("inventory_providor_id is null and user_from_id is null and (project_id is not null or user_to_id is not null)").order("date DESC")
   end
 
   
   
   def categories
     current_user = find_current_user
+    if @inventory_category.nil? then @inventory_category = InventoryCategory.new end
     @has_permission = current_user.admin? || user_has_warehouse_permission(current_user.id, nil)
     
     if params[:delete] or params[:edit] or params[:inventory_category]
@@ -418,13 +416,14 @@ class InventoryController < ApplicationController
       end
     end
     
-    @categories = InventoryCategory.find(:all)
+    @categories = InventoryCategory.all.to_a
   end
 
 
     
   def parts
-    @categories = InventoryCategory.find(:all, :order => 'name').map {|c| [c.name,c.id]}
+    @inventory_part = InventoryPart.new
+    @categories = InventoryCategory.all.order('name').map {|c| [c.name,c.id]}
     @statuses = { l('active') => 1, l("obsolet") => 2, l('discontinued') => 3}
     @statuses_array = ['',l('active'),l("obsolet"),l('discontinued')]
     current_user = find_current_user
@@ -458,11 +457,13 @@ class InventoryController < ApplicationController
         flash[:error] = l('permission_denied')
       end
     end
-    @parts = InventoryPart.find(:all)
+    @parts = InventoryPart.all.to_a
   end
   
   def providors
     current_user = find_current_user
+    @inventory_providor = InventoryProvidor.new
+    @inventory_providor = InventoryProvidor.new
     @has_permission = current_user.admin? || user_has_warehouse_permission(current_user.id, nil)
     if params[:delete] or params[:edit] or params[:inventory_providor]
       if @has_permission
@@ -495,12 +496,13 @@ class InventoryController < ApplicationController
     end
     
     
-    @providors = InventoryProvidor.find(:all)
+    @providors = InventoryProvidor.all.to_a
   end
   
   def warehouses
-    @users = User.find(:all, :conditions => 'status=1' , :order => 'lastname ASC, firstname ASC').map {|u| [u.lastname+" "+u.firstname, u.id]}
+    @users = User.where('status=1').order('lastname ASC, firstname ASC').map {|u| [u.lastname+" "+u.firstname, u.id]}
     @has_permission = find_current_user.admin?
+    @inventory_warehouse = InventoryWarehouse.new
     if params[:delete] or params[:edit] or params[:inventory_warehouse]
       if @has_permission
         if params[:delete]
@@ -529,7 +531,7 @@ class InventoryController < ApplicationController
       end
     end
     
-    @warehouses = InventoryWarehouse.find(:all)
+    @warehouses = InventoryWarehouse.all.to_a
   end
 
 
